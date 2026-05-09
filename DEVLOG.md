@@ -13,3 +13,19 @@
 **What I learned:** Vercel auto-detects Next.js with zero config. User interviews revealed token optimization and trust signals matter as much as subscription cost savings — changed my audit design thinking.
 **Blockers / what I'm stuck on:** Haven't started the spend input form yet — that's tomorrow.
 **Plan for tomorrow:** Build the spend input form with all 8 tools, plan dropdowns, seat count, use case selector, and localStorage persistence.
+
+## Day 3 — 2026-05-08
+
+**Hours worked:** 0
+**What I did:** Rest day — college schedule.
+**What I learned:** —
+**Blockers / what I'm stuck on:** —
+**Plan for tomorrow:** Build spend input form and audit engine.
+
+## Day 4 — 2026-05-09
+
+**Hours worked:** 3
+**What I did:** Installed shadcn/ui components. Built spend input form with all 8 tools (Cursor, GitHub Copilot, Claude, ChatGPT, Anthropic API, OpenAI API, Gemini, Windsurf) — plan dropdowns, seat count, monthly spend fields, use case selector, and localStorage persistence across page reloads. Built audit engine in lib/auditEngine.ts with plan-fit checks (e.g. Team plan for 2 users flagged), redundancy detection across coding tools and chat tools, API + subscription overlap detection, and overpay detection vs official pricing. Built results page at /audit with per-tool breakdown, savings hero, Credex CTA for high savings, and optimal spend message.
+**What I learned:** Audit logic needs to be seat-aware and math needs to be shown explicitly — "Team plan for 2 users costs $60/mo vs 2x Plus at $40/mo" is more defensible than just saying "downgrade." The reasoning has to read like a finance person wrote it.
+**Blockers / what I'm stuck on:** Anthropic API integration for personalized summary, email capture, Supabase storage, and shareable URLs still to do.
+**Plan for tomorrow:** UI polish on results page, integrate Anthropic API for 100-word summary, build email capture form, set up Supabase for lead storage, Resend for transactional email.
