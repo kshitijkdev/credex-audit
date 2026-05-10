@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FormState, ToolName } from "@/lib/types";
+import { FormState } from "@/lib/types";
 import { runAudit, AuditResult } from "@/lib/auditEngine";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,7 @@ export default function AuditPage() {
   const [website, setWebsite] = useState(""); // honeypot
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [shareableUrl, setShareableUrl] = useState<string>("");
 
   useEffect(() => {
     const saved = localStorage.getItem("credex-audit-form");
@@ -67,7 +68,7 @@ export default function AuditPage() {
         setAiSummary(data.summary || result.summary);
       })
       .catch(() => {
-        setAudit((prev) => prev);
+        setAiSummary(result.summary);
       })
       .finally(() => setSummaryLoading(false));
   }, [router]);
@@ -76,6 +77,23 @@ export default function AuditPage() {
     if (!email || !audit || !form) return;
     setSubmitting(true);
     try {
+      // Save audit for shareable URL
+      const auditRes = await fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          toolsData: form.tools,
+          monthlySavings: audit.totalMonthlySavings,
+          annualSavings: audit.totalAnnualSavings,
+          useCase: form.useCase,
+          teamSize: form.teamSize,
+        }),
+      });
+      const auditData = await auditRes.json();
+      const shareUrl = `${window.location.origin}/audit/${auditData.id}`;
+      setShareableUrl(shareUrl);
+
+      // Save lead
       await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,7 +133,7 @@ export default function AuditPage() {
           </span>
         </h1>
         <p className="text-slate-400 mt-2 text-lg">
-          That's{" "}
+          That&apos;s{" "}
           <span className="text-white font-semibold">
             ${audit.totalAnnualSavings.toFixed(0)}/year
           </span>{" "}
@@ -212,7 +230,7 @@ export default function AuditPage() {
           <Card className="bg-slate-900 border-slate-700">
             <CardContent className="pt-6 text-center space-y-2">
               <p className="text-emerald-400 font-semibold">
-                You're spending well ✓
+                You&apos;re spending well ✓
               </p>
               <p className="text-slate-400 text-sm">
                 No major savings opportunities found right now.
@@ -232,9 +250,33 @@ export default function AuditPage() {
           </CardHeader>
           <CardContent>
             {submitted ? (
-              <p className="text-emerald-400 text-sm">
-                ✓ Report sent! Check your inbox.
-              </p>
+              <div className="space-y-3">
+                <p className="text-emerald-400 text-sm">
+                  ✓ Report sent! Check your inbox.
+                </p>
+                {shareableUrl && (
+                  <div className="space-y-1">
+                    <p className="text-slate-400 text-xs">
+                      Your shareable link:
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        value={shareableUrl}
+                        className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-1 text-xs text-slate-300"
+                      />
+                      <button
+                        onClick={() =>
+                          navigator.clipboard.writeText(shareableUrl)
+                        }
+                        className="text-xs text-emerald-400 hover:text-emerald-300"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="space-y-3">
                 {/* Honeypot - hidden from real users */}
@@ -247,9 +289,7 @@ export default function AuditPage() {
                   autoComplete="off"
                 />
                 <div className="space-y-1">
-                  <Label className="text-slate-400 text-xs">
-                    Email *
-                  </Label>
+                  <Label className="text-slate-400 text-xs">Email *</Label>
                   <Input
                     type="email"
                     placeholder="you@company.com"
