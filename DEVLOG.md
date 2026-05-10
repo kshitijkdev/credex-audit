@@ -29,3 +29,11 @@
 **What I learned:** Audit logic needs to be seat-aware and math needs to be shown explicitly — "Team plan for 2 users costs $60/mo vs 2x Plus at $40/mo" is more defensible than just saying "downgrade." The reasoning has to read like a finance person wrote it.
 **Blockers / what I'm stuck on:** Anthropic API integration for personalized summary, email capture, Supabase storage, and shareable URLs still to do.
 **Plan for tomorrow:** UI polish on results page, integrate Anthropic API for 100-word summary, build email capture form, set up Supabase for lead storage, Resend for transactional email.
+
+## Day 5 — 2026-05-10
+
+**Hours worked:** 4
+**What I did:** Set up Anthropic API key, Supabase project, Resend email. Created leads and audits tables in Supabase. Built /api/summary route for AI-generated personalized summary with fallback. Built /api/leads route with honeypot abuse protection and Resend transactional email. Built /api/audit route for saving and fetching audits. Built shareable public audit page at /audit/[id] with OG and Twitter card meta tags. Wired email capture to generate shareable URL on submission.
+**What I learned:** Never share API keys in chat — had to revoke and regenerate Anthropic key immediately. Honeypot is simpler than captcha for basic abuse protection and doesn't hurt UX.
+**Blockers / what I'm stuck on:** Need to write 5 audit engine tests and set up GitHub Actions CI tomorrow.
+**Plan for tomorrow:** Write TESTS.md + 5 Vitest tests, set up CI workflow, write GTM.md, ECONOMICS.md, ARCHITECTURE.md.
