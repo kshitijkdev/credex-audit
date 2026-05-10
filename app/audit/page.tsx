@@ -7,6 +7,8 @@ import { runAudit, AuditResult } from "@/lib/auditEngine";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const FLAG_STYLES: Record<string, string> = {
   overpaying: "bg-red-500/10 text-red-400 border-red-500/20",
@@ -25,6 +27,17 @@ const FLAG_LABELS: Record<string, string> = {
 export default function AuditPage() {
   const router = useRouter();
   const [audit, setAudit] = useState<AuditResult | null>(null);
+  const [form, setForm] = useState<FormState | null>(null);
+  const [aiSummary, setAiSummary] = useState<string>("");
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
+  // Email capture state
+  const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [role, setRole] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("credex-audit-form");
@@ -32,10 +45,59 @@ export default function AuditPage() {
       router.push("/");
       return;
     }
-    const form: FormState = JSON.parse(saved);
-    const result = runAudit(form);
+    const parsedForm: FormState = JSON.parse(saved);
+    setForm(parsedForm);
+    const result = runAudit(parsedForm);
     setAudit(result);
+
+    // Fetch AI summary
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        summary: result.summary,
+        totalMonthlySavings: result.totalMonthlySavings,
+        totalAnnualSavings: result.totalAnnualSavings,
+        useCase: parsedForm.useCase,
+        teamSize: parsedForm.teamSize,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setAiSummary(data.summary || result.summary);
+      })
+      .catch(() => {
+        setAudit((prev) => prev);
+      })
+      .finally(() => setSummaryLoading(false));
   }, [router]);
+
+  const handleEmailSubmit = async () => {
+    if (!email || !audit || !form) return;
+    setSubmitting(true);
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          companyName,
+          role,
+          website, // honeypot
+          teamSize: form.teamSize,
+          toolsData: form.tools,
+          monthlySavings: audit.totalMonthlySavings,
+          annualSavings: audit.totalAnnualSavings,
+          useCase: form.useCase,
+        }),
+      });
+      setSubmitted(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!audit) return null;
 
@@ -65,9 +127,15 @@ export default function AuditPage() {
         {/* AI Summary */}
         <Card className="bg-slate-900 border-slate-700">
           <CardContent className="pt-5">
-            <p className="text-slate-300 text-sm leading-relaxed">
-              {audit.summary}
-            </p>
+            {summaryLoading ? (
+              <div className="text-slate-500 text-sm animate-pulse">
+                Generating personalized summary...
+              </div>
+            ) : (
+              <p className="text-slate-300 text-sm leading-relaxed">
+                {aiSummary || audit.summary}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -77,18 +145,13 @@ export default function AuditPage() {
             Tool Breakdown
           </h2>
           {audit.results.map((r) => (
-            <Card
-              key={r.tool}
-              className="bg-slate-900 border-slate-800"
-            >
+            <Card key={r.tool} className="bg-slate-900 border-slate-800">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white text-base">
                     {r.toolLabel}
                   </CardTitle>
-                  <Badge
-                    className={`text-xs border ${FLAG_STYLES[r.flag]}`}
-                  >
+                  <Badge className={`text-xs border ${FLAG_STYLES[r.flag]}`}>
                     {FLAG_LABELS[r.flag]}
                   </Badge>
                 </div>
@@ -124,7 +187,7 @@ export default function AuditPage() {
           ))}
         </div>
 
-        {/* Credex CTA for high savings */}
+        {/* Credex CTA */}
         {audit.showCredex && (
           <Card className="bg-emerald-950 border-emerald-800">
             <CardContent className="pt-6 text-center space-y-3">
@@ -133,9 +196,9 @@ export default function AuditPage() {
               </p>
               <p className="text-emerald-400/80 text-sm">
                 Credex sources discounted AI infrastructure credits from
-                companies that overforecast. With ${audit.totalMonthlySavings.toFixed(0)}/mo
-                in identified overspend, you could save even more through
-                credits.
+                companies that overforecast. With $
+                {audit.totalMonthlySavings.toFixed(0)}/mo in identified
+                overspend, you could save even more through credits.
               </p>
               <Button className="bg-emerald-600 hover:bg-emerald-500 text-white">
                 Book a Credex Consultation →
@@ -144,7 +207,7 @@ export default function AuditPage() {
           </Card>
         )}
 
-        {/* Optimal spend message */}
+        {/* Optimal spend */}
         {audit.totalMonthlySavings === 0 && (
           <Card className="bg-slate-900 border-slate-700">
             <CardContent className="pt-6 text-center space-y-2">
@@ -154,14 +217,83 @@ export default function AuditPage() {
               <p className="text-slate-400 text-sm">
                 No major savings opportunities found right now.
               </p>
-              <Button variant="outline" className="mt-2 border-slate-600 text-slate-300">
-                Notify me when optimizations apply →
-              </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Back button */}
+        {/* Email capture */}
+        <Card className="bg-slate-900 border-slate-700">
+          <CardHeader>
+            <CardTitle className="text-white text-base">
+              {audit.totalMonthlySavings > 0
+                ? "Get your full report by email"
+                : "Get notified when optimizations apply to your stack"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {submitted ? (
+              <p className="text-emerald-400 text-sm">
+                ✓ Report sent! Check your inbox.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {/* Honeypot - hidden from real users */}
+                <input
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  style={{ display: "none" }}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+                <div className="space-y-1">
+                  <Label className="text-slate-400 text-xs">
+                    Email *
+                  </Label>
+                  <Input
+                    type="email"
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="bg-slate-800 border-slate-700 text-white"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-slate-400 text-xs">
+                      Company (optional)
+                    </Label>
+                    <Input
+                      placeholder="Acme Inc."
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-slate-400 text-xs">
+                      Role (optional)
+                    </Label>
+                    <Input
+                      placeholder="Engineering Manager"
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      className="bg-slate-800 border-slate-700 text-white"
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={handleEmailSubmit}
+                  disabled={!email || submitting}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                >
+                  {submitting ? "Sending..." : "Send my report →"}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <button
           onClick={() => router.push("/")}
           className="text-slate-500 text-sm hover:text-slate-300 transition-colors"
