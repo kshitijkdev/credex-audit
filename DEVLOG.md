@@ -34,6 +34,7 @@
 
 **Hours worked:** 4
 **What I did:** Set up Anthropic API key, Supabase project, Resend email. Created leads and audits tables in Supabase. Built /api/summary route for AI-generated personalized summary with fallback. Built /api/leads route with honeypot abuse protection and Resend transactional email. Built /api/audit route for saving and fetching audits. Built shareable public audit page at /audit/[id] with OG and Twitter card meta tags. Wired email capture to generate shareable URL on submission.
+Fixed TypeScript build error — app/api/audit/route.ts was empty, added route content. Build now clean on Vercel.
 **What I learned:** Never share API keys in chat — had to revoke and regenerate Anthropic key immediately. Honeypot is simpler than captcha for basic abuse protection and doesn't hurt UX.
 **Blockers / what I'm stuck on:** Need to write 5 audit engine tests and set up GitHub Actions CI tomorrow.
 **Plan for tomorrow:** Write TESTS.md + 5 Vitest tests, set up CI workflow, write GTM.md, ECONOMICS.md, ARCHITECTURE.md.
