@@ -171,12 +171,12 @@ export function runAudit(form: FormState): AuditResult {
     }
 
     // 6. Credits opportunity for high spend
-    if (currentSpend >= 50 && result.flag !== "optimal") {
-      result = {
-        ...result,
-        flag: "credits",
-      };
-    }
+    if (currentSpend >= 50 && result.flag === "optimal") {
+  result = {
+    ...result,
+    flag: "credits",
+  };
+}
 
     results.push(result);
   }
