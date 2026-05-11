@@ -38,3 +38,11 @@ Fixed TypeScript build error — app/api/audit/route.ts was empty, added route c
 **What I learned:** Never share API keys in chat — had to revoke and regenerate Anthropic key immediately. Honeypot is simpler than captcha for basic abuse protection and doesn't hurt UX.
 **Blockers / what I'm stuck on:** Need to write 5 audit engine tests and set up GitHub Actions CI tomorrow.
 **Plan for tomorrow:** Write TESTS.md + 5 Vitest tests, set up CI workflow, write GTM.md, ECONOMICS.md, ARCHITECTURE.md.
+
+## Day 6 — 2026-05-11
+
+**Hours worked:** 2.5
+**What I did:** Installed Vitest, wrote 6 audit engine tests covering overpay detection, plan-fit logic, redundancy detection, savings math, and API overlap. Fixed a bug where the `credits` flag was overriding `overpaying` and `redundant` flags — changed logic so `credits` only applies to already-optimal tools with high spend. Set up GitHub Actions CI workflow running tests on every push to main — green. Filled PRICING_DATA.md with all vendor pricing URLs verified today. Wrote PROMPTS.md with full prompt, reasoning, and what didn't work.
+**What I learned:** Writing tests caught a real bug in the audit engine flag logic — the credits override was masking overpaying and redundant flags. Tests are worth it even for "simple" rule-based logic.
+**Blockers / what I'm stuck on:** Entrepreneurial files still to write — GTM, ECONOMICS, ARCHITECTURE, LANDING_COPY, METRICS, REFLECTION.
+**Plan for tomorrow:** Write all entrepreneurial files and ARCHITECTURE.md. Final README polish. Lighthouse check on live URL.
