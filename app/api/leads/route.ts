@@ -4,8 +4,15 @@ import { supabase } from "@/lib/supabase";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { toolsData, monthlySavings, annualSavings, useCase, teamSize } =
-      body;
+    const {
+      toolsData,
+      monthlySavings,
+      annualSavings,
+      useCase,
+      teamSize,
+      userEmail,        // NEW: passed from frontend after email capture
+      pricingSnapshot,  // NEW: current pricing at time of audit
+    } = body;
 
     const { data, error } = await supabase
       .from("audits")
@@ -16,6 +23,8 @@ export async function POST(req: NextRequest) {
           annual_savings: annualSavings,
           use_case: useCase,
           team_size: teamSize,
+          user_email: userEmail ?? null,
+          pricing_snapshot: pricingSnapshot ?? null,
         },
       ])
       .select("id")
@@ -26,11 +35,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: data.id });
   } catch (error) {
     console.error("Audit save error:", error);
-    return NextResponse.json({ error: "Failed to save audit" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to save audit" },
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(req: NextRequest) {
+  // unchanged
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");

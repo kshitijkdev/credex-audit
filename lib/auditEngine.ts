@@ -31,7 +31,11 @@ const TOOL_LABELS: Record<ToolName, string> = {
   windsurf: "Windsurf",
 };
 
-export function runAudit(form: FormState): AuditResult {
+export function runAudit(
+  form: FormState,
+  pricingOverride?: Record<string, Record<string, number>>
+): AuditResult {
+  const pricing = pricingOverride ?? OFFICIAL_PRICING;
   const results: ToolAuditResult[] = [];
   const enabledTools = (Object.keys(form.tools) as ToolName[]).filter(
     (t) => form.tools[t].enabled
@@ -57,8 +61,7 @@ export function runAudit(form: FormState): AuditResult {
 
   for (const tool of enabledTools) {
     const entry = form.tools[tool];
-    const officialPrice =
-      OFFICIAL_PRICING[tool]?.[entry.plan] ?? 0;
+    const officialPrice = pricing[tool]?.[entry.plan] ?? 0;
     const expectedSpend = officialPrice * entry.seats;
     const currentSpend = entry.monthlySpend;
     let result: ToolAuditResult = {
@@ -172,11 +175,11 @@ export function runAudit(form: FormState): AuditResult {
 
     // 6. Credits opportunity for high spend
     if (currentSpend >= 50 && result.flag === "optimal") {
-  result = {
-    ...result,
-    flag: "credits",
-  };
-}
+      result = {
+        ...result,
+        flag: "credits",
+      };
+    }
 
     results.push(result);
   }
