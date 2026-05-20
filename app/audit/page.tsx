@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormState } from "@/lib/types";
 import { runAudit, AuditResult } from "@/lib/auditEngine";
+import { OFFICIAL_PRICING } from "@/lib/pricingData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,9 @@ export default function AuditPage() {
           annualSavings: audit.totalAnnualSavings,
           useCase: form.useCase,
           teamSize: form.teamSize,
+          userEmail: email,
+          pricingSnapshot: OFFICIAL_PRICING,
+          outputResult: audit,
         }),
       });
       const auditData = await auditRes.json();
@@ -338,7 +342,7 @@ export default function AuditPage() {
           onClick={() => router.push("/")}
           className="text-slate-500 text-sm hover:text-slate-300 transition-colors"
         >
-          ← Edit my tools
+          ← Start over
         </button>
       </div>
     </main>
