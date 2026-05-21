@@ -68,7 +68,7 @@ export default async function ReauditPage({
             href="/"
             className="text-slate-500 text-sm hover:text-slate-300 mb-4 inline-block"
           >
-            ← Run new audit
+            â† Run new audit
           </a>
           <h1 className="text-3xl font-bold text-white mb-2">
             Updated Audit Results
