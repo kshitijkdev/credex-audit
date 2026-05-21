@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { notFound } from "next/navigation";
 import { runAudit } from "@/lib/auditEngine";
 import { OFFICIAL_PRICING } from "@/lib/pricingData";
 import { ToolAuditResult } from "@/lib/auditEngine";
@@ -18,24 +18,15 @@ const FLAG_BG: Record<string, string> = {
 };
 
 export default async function ReauditPage({ params }: { params: { id: string } }) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   let audit: any = null;
   try {
-    const { data, error } = await supabase
-      .from("audits")
-      .select("*")
-      .eq("id", params.id)
-      .single();
-    if (!error) audit = data;
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/audit?id=${params.id}`, { cache: "no-store" });
+    if (res.ok) audit = await res.json();
   } catch (e) {
-    console.error("Supabase fetch error:", e);
+    console.error("Fetch error:", e);
   }
 
-  if (!audit) {
+  if (!audit || audit.error) {
     return (
       <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
         <p className="text-slate-400">Audit not found.</p>
