@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormState } from "@/lib/types";
 import { runAudit, AuditResult } from "@/lib/auditEngine";
+import { OFFICIAL_PRICING } from "@/lib/pricingData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export default function AuditPage() {
     if (!email || !audit || !form) return;
     setSubmitting(true);
     try {
-      // Save audit for shareable URL
+      // Save audit with all Round 2 fields
       const auditRes = await fetch("/api/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,11 +88,24 @@ export default function AuditPage() {
           annualSavings: audit.totalAnnualSavings,
           useCase: form.useCase,
           teamSize: form.teamSize,
+          userEmail: email,
+          pricingSnapshot: OFFICIAL_PRICING,
+          outputResult: audit,
         }),
       });
+
       const auditData = await auditRes.json();
-      const shareUrl = `${window.location.origin}/audit/${auditData.id}`;
-      setShareableUrl(shareUrl);
+
+      if (!auditRes.ok) {
+        console.error("Audit save failed:", auditData);
+      }
+
+      const auditId = auditData?.id;
+      const shareUrl = auditId
+        ? `${window.location.origin}/audit/${auditId}`
+        : null;
+
+      if (shareUrl) setShareableUrl(shareUrl);
 
       // Save lead
       await fetch("/api/leads", {
@@ -109,6 +123,7 @@ export default function AuditPage() {
           useCase: form.useCase,
         }),
       });
+
       setSubmitted(true);
     } catch (e) {
       console.error(e);
