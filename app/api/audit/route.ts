@@ -4,16 +4,8 @@ import { supabase } from "@/lib/supabase";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const {
-      toolsData,
-      monthlySavings,
-      annualSavings,
-      useCase,
-      teamSize,
-      userEmail,
-      pricingSnapshot,
-      outputResult,
-    } = body;
+    const { toolsData, monthlySavings, annualSavings, useCase, teamSize } =
+      body;
 
     const { data, error } = await supabase
       .from("audits")
@@ -24,19 +16,20 @@ export async function POST(req: NextRequest) {
           annual_savings: annualSavings,
           use_case: useCase,
           team_size: teamSize,
-          user_email: userEmail ?? null,
-          pricing_snapshot: pricingSnapshot ?? null,
-          output_result: outputResult ?? null,
         },
       ])
       .select("id")
       .single();
 
     if (error) throw error;
+
     return NextResponse.json({ id: data.id });
   } catch (error) {
     console.error("Audit save error:", error);
-    return NextResponse.json({ error: "Failed to save audit" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to save audit" },
+      { status: 500 }
+    );
   }
 }
 
@@ -44,6 +37,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+
     if (!id) return NextResponse.json({ error: "No id" }, { status: 400 });
 
     const { data, error } = await supabase
@@ -53,6 +47,7 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (error) throw error;
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("Audit fetch error:", error);
