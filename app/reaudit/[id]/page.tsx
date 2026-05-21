@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { notFound } from "next/navigation";
 import { runAudit } from "@/lib/auditEngine";
 import { OFFICIAL_PRICING } from "@/lib/pricingData";
 import { ToolAuditResult } from "@/lib/auditEngine";
@@ -24,20 +23,46 @@ export default async function ReauditPage({ params }: { params: { id: string } }
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data: audit, error } = await supabase
-    .from("audits")
-    .select("*")
-    .eq("id", params.id)
-    .single();
+  let audit: any = null;
+  try {
+    const { data, error } = await supabase
+      .from("audits")
+      .select("*")
+      .eq("id", params.id)
+      .single();
+    if (!error) audit = data;
+  } catch (e) {
+    console.error("Supabase fetch error:", e);
+  }
 
-  if (error || !audit) notFound();
+  if (!audit) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <p className="text-slate-400">Audit not found.</p>
+      </main>
+    );
+  }
 
   const oldResult = audit.output_result;
-  const formState = { tools: audit.tools_data, useCase: audit.use_case, teamSize: audit.team_size };
-  const newResult = runAudit(formState, OFFICIAL_PRICING);
+  let newResult: any = null;
+  try {
+    const formState = { tools: audit.tools_data, useCase: audit.use_case, teamSize: audit.team_size };
+    newResult = runAudit(formState, OFFICIAL_PRICING);
+  } catch (e) {
+    console.error("runAudit error:", e);
+  }
+
+  if (!newResult) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <p className="text-slate-400">Could not generate updated audit.</p>
+      </main>
+    );
+  }
+
   const savingsDelta = newResult.totalMonthlySavings - (oldResult?.totalMonthlySavings ?? 0);
 
-  const changedTools = newResult.results.filter((newTool) => {
+  const changedTools = newResult.results.filter((newTool: any) => {
     const oldTool = oldResult?.results?.find((o: ToolAuditResult) => o.tool === newTool.tool);
     if (!oldTool) return false;
     return oldTool.flag !== newTool.flag || oldTool.recommendedAction !== newTool.recommendedAction;
@@ -61,11 +86,11 @@ export default async function ReauditPage({ params }: { params: { id: string } }
         </div>
         {changedTools.length > 0 && (
           <div className="bg-amber-900/20 border border-amber-800 rounded-xl p-4 mb-6">
-            <p className="text-amber-300 font-medium text-sm">{changedTools.length} recommendation{changedTools.length > 1 ? "s" : ""} changed: {changedTools.map((t) => t.toolLabel).join(", ")}</p>
+            <p className="text-amber-300 font-medium text-sm">{changedTools.length} recommendation{changedTools.length > 1 ? "s" : ""} changed: {changedTools.map((t: any) => t.toolLabel).join(", ")}</p>
           </div>
         )}
         <div className="space-y-4">
-          {newResult.results.map((newTool) => {
+          {newResult.results.map((newTool: any) => {
             const oldTool = oldResult?.results?.find((o: ToolAuditResult) => o.tool === newTool.tool);
             const changed = oldTool && (oldTool.flag !== newTool.flag || oldTool.recommendedAction !== newTool.recommendedAction);
             return (
@@ -79,18 +104,15 @@ export default async function ReauditPage({ params }: { params: { id: string } }
                     <div className={`rounded-lg border p-3 opacity-60 ${FLAG_BG[oldTool.flag]}`}>
                       <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Previous</p>
                       <p className="text-sm text-slate-300">{oldTool.recommendedAction}</p>
-                      {oldTool.estimatedSavings > 0 && <p className="text-xs text-slate-500 mt-1">Savings: ${oldTool.estimatedSavings}/mo</p>}
                     </div>
                     <div className={`rounded-lg border p-3 ${FLAG_BG[newTool.flag]}`}>
                       <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Updated</p>
                       <p className="text-sm text-slate-100">{newTool.recommendedAction}</p>
-                      {newTool.estimatedSavings > 0 && <p className="text-xs text-slate-400 mt-1">Savings: ${newTool.estimatedSavings}/mo</p>}
                     </div>
                   </div>
                 ) : (
                   <div className={`rounded-lg border p-3 ${FLAG_BG[newTool.flag]}`}>
                     <p className="text-sm text-slate-300">{newTool.recommendedAction}</p>
-                    {newTool.estimatedSavings > 0 && <p className="text-xs text-slate-400 mt-1">Estimated savings: ${newTool.estimatedSavings}/mo</p>}
                   </div>
                 )}
               </div>
