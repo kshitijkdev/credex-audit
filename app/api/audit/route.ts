@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
@@ -36,10 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: data.id });
   } catch (error) {
     console.error("Audit save error:", error);
-    return NextResponse.json(
-      { error: "Failed to save audit" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to save audit" }, { status: 500 });
   }
 }
 
